@@ -1,6 +1,7 @@
 package com.example.proj3_secretdiary
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -12,7 +13,7 @@ import androidx.core.content.edit
 
 class MainActivity : AppCompatActivity() {
 
-    private val numberPicker1: NumberPicker by lazy {
+    private val firstNumberPicker: NumberPicker by lazy {
         findViewById<NumberPicker>(R.id.numberPicker1)
             .apply {
                 this.minValue = 0
@@ -20,7 +21,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    private val numberPicker2: NumberPicker by lazy {
+    private val secondNumberPicker: NumberPicker by lazy {
         findViewById<NumberPicker>(R.id.numberPicker2)
             .apply {
                 this.minValue = 0
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    private val numberPicker3: NumberPicker by lazy {
+    private val thirdNumberPicker: NumberPicker by lazy {
         findViewById<NumberPicker>(R.id.numberPicker3)
             .apply {
                 this.minValue = 0
@@ -50,56 +51,64 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        numberPicker1
-        numberPicker2
-        numberPicker3
+        initNumberPicker()
+        initOpenButton()
+        initChangePasswordButton()
+    }
 
+    private fun initNumberPicker() {
+        firstNumberPicker
+        secondNumberPicker
+        thirdNumberPicker
+    }
+
+    private fun initOpenButton() {
         openButton.setOnClickListener {
-
             if (changePasswordMode) {
-                Toast.makeText(this, "비밀번호 변경 중입니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "비밀번호 변경 모드입니다.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val passwordPreferences = getSharedPreferences("password", Context.MODE_PRIVATE)
-            val passwordFromUser = "${numberPicker1}${numberPicker2}${numberPicker3}"
+            val sharedPreferences = getSharedPreferences("password", Context.MODE_PRIVATE)
+            val password = "${firstNumberPicker.value}${secondNumberPicker.value}${thirdNumberPicker.value}"
 
-            if (passwordPreferences.getString("password", "000").equals(passwordFromUser)) {
-                //startActivity()
+            if (password == sharedPreferences.getString("password", "000")) {
+                startActivity(Intent(this, DiaryActivity::class.java))
             } else {
-                showErrorAlertDialog()
-            }
-
-        }
-
-        changePasswordButton.setOnClickListener {
-
-            val passwordPreferences = getSharedPreferences("password", Context.MODE_PRIVATE)
-            val passwordFromUser = "${numberPicker1}${numberPicker2}${numberPicker3}"
-
-            if (changePasswordMode) {
-
-                passwordPreferences.edit(true) {
-                    putString("password", passwordFromUser)
-                }
-                changePasswordMode = false
-                changePasswordButton.setBackgroundColor(Color.BLACK)
-
-            } else {
-
-                if (passwordPreferences.getString("password", "000").equals(passwordFromUser)) {
-                    changePasswordMode = true
-                    Toast.makeText(this, "변경할 패스워드를 입력해주세요", Toast.LENGTH_SHORT).show()
-                    changePasswordButton.setBackgroundColor(Color.RED)
-                } else {
-                    showErrorAlertDialog()
-                }
-
+                showErrorPopup()
             }
         }
     }
 
-    private fun showErrorAlertDialog() {
+    private fun initChangePasswordButton() {
+        changePasswordButton.setOnClickListener {
+            val sharedPreferences = getSharedPreferences("password", Context.MODE_PRIVATE)
+
+            if (changePasswordMode) {
+
+
+                sharedPreferences.edit {
+                    this.putString("password", "${firstNumberPicker.value}${secondNumberPicker.value}${thirdNumberPicker.value}")
+                    commit()
+                }
+                changePasswordMode = false
+                changePasswordButton.setBackgroundColor(Color.BLACK)
+            } else {
+                val password = "${firstNumberPicker.value}${secondNumberPicker.value}${thirdNumberPicker.value}"
+
+                if (password != sharedPreferences.getString("password", "000")) {
+                    showErrorPopup()
+                    return@setOnClickListener
+                }
+
+                changePasswordButton.setBackgroundColor(Color.RED)
+                Toast.makeText(this, "변경할 비밀번호를 입력하고 다시 눌러주세요.", Toast.LENGTH_SHORT).show()
+                changePasswordMode = true
+            }
+        }
+    }
+
+    private fun showErrorPopup() {
         AlertDialog.Builder(this)
             .setTitle("실패!!")
             .setMessage("비밀번호가 잘못되었습니다.")
